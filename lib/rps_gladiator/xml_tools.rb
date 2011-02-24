@@ -11,5 +11,24 @@ module RPSGladiator
       Nokogiri::XML(raw_xml, nil, 'UTF-8').root
     end
 
+    def generate_game_xml(template, data=nil)
+      render_template(template, data).doc.children.to_xml
+    end
+
+    def render_template(template, data)
+      case template
+      when 'player_move'
+        Nokogiri::XML::Builder.new do |xml|
+          xml.PlayerMove(XMLTools::GAME_NS) {
+            xml.GameId data[:id]
+            xml.Move data[:move] }
+        end
+      when 'registration'
+        Nokogiri::XML::Builder.new do |xml|
+          xml.Register(XMLTools::GAME_NS)
+        end
+      end
+    end
+    
   end
 end

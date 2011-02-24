@@ -12,12 +12,6 @@ module RPSGladiator
 
     def get_move
       move = MOVES[rand(3)]
-      Nokogiri::XML::Builder.new do
-        PlayerMove(XMLTools::GAME_NS) {
-          GameId id
-          Move move
-        }
-      end.doc.children.to_xml
     end
   end
 end

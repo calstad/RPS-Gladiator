@@ -9,6 +9,7 @@ module RPSGladiator
     
     def initialize
       @config = YAML::load(File.read('config/settings.yml'))
+      @game_pool = []
       connect
       run_game
     end
@@ -36,10 +37,12 @@ module RPSGladiator
         puts 'Tourney Started!'
       when 'GameStart'
         create_game(xml_doc)
-        puts "Started Game #{@game.id}"
       when 'TurnStart'
-        move = @game.get_move
-        @client.deliver(@config['server']['name'], move)
+        game_id = xpath_query(xml_doc, "GameId")
+        game = @game_pool.detect {|g| g.id == game_id}
+        move_data = {:move => game.get_move, :id => game.id}
+        move_xml = generate_game_xml('player_move', move_data)
+        @client.deliver(@config['server']['name'], move_xml)
       when 'TurnResult'
         puts xml_doc.to_xml
       when 'GameOver'
@@ -55,18 +58,13 @@ module RPSGladiator
         :bubbles => xpath_query(xml_node, "AllowBubbles"),
         :dynamite_count => xpath_query(xml_node, "DynamiteCount")
       }
-      @game = Game.new(game_options)
+      @game_pool << Game.new(game_options)
     end
 
     def register
-      @client.deliver(@config['server']['name'], registration_xml)
+      @client.deliver(@config['server']['name'], generate_game_xml('registration'))
     end
 
-    def registration_xml
-      Nokogiri::XML::Builder.new do
-        Register(XMLTools::GAME_NS)
-      end.doc.children.to_xml
-    end
   end
 end
 
